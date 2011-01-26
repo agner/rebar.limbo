@@ -294,6 +294,11 @@ use_source(Dep, Count) ->
             use_source(Dep#dep { dir = TargetDir }, Count-1)
     end.
 
+download_source(AppDir, {agner, AgnerName}) ->
+    download_source(AppDir, {agner, AgnerName, {branch, "master"}});
+download_source(AppDir, {agner, AgnerName, AgnerVersion}) ->
+    agner:start(),
+    agner:fetch(AgnerName, AgnerVersion, AppDir);
 download_source(AppDir, {hg, Url, Rev}) ->
     ok = filelib:ensure_dir(AppDir),
     rebar_utils:sh(?FMT("hg clone -U ~s ~s", [Url, filename:basename(AppDir)]),
@@ -362,6 +367,10 @@ update_source(AppDir, {bzr, _Url, Rev}) ->
 %% Source helper functions
 %% ===================================================================
 
+source_engine_avail({agner, _}) ->
+    true;
+source_engine_avail({agner, _, _}) ->
+    true;
 source_engine_avail({Name, _, _}=Source)
   when Name == hg; Name == git; Name == svn; Name == bzr ->
     case scm_client_vsn(Name) >= required_scm_client_vsn(Name) of

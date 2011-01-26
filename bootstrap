@@ -54,7 +54,11 @@ main(Args) ->
     %% Read the contents of the files in ebin and templates; note that we place
     %% all the beam files at the top level of the code archive so that code loading
     %% works properly.
-    Files = load_files("*", "ebin") ++ load_files("priv/templates/*", "."),
+    Files = 
+        load_files("*", "ebin") ++
+        load_files("*", "deps/agner/ebin") ++
+        load_files("*", "deps/agner/deps/getopt/ebin") ++
+        load_files("priv/templates/*", "."),
 
     case zip:create("mem", Files, [memory]) of
         {ok, {"mem", ZipBin}} ->

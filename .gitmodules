@@ -1,0 +1,3 @@
+[submodule "deps/agner"]
+	path = deps/agner
+	url = git://github.com/agner/agner

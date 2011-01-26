@@ -75,6 +75,8 @@ preprocess(Config, _) ->
             ok
     end,
 
+    application:set_env(agner, indices, rebar_config:get_local(Config, agner_indices, [{github,"agner"}])),
+
     %% Return all the available dep directories for process
     {ok, [D#dep.dir || D <- AvailableDeps]}.
 

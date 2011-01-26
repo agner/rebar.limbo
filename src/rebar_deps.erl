@@ -343,6 +343,11 @@ update_source(Dep) ->
             Dep
     end.
 
+update_source(AppDir, {agner, AgnerName}) ->
+    update_source(AppDir, {agner, AgnerName, {branch, "master"}});
+update_source(AppDir, {agner, AgnerName, AgnerVersion}) ->
+    agner:fetch(AgnerName, AgnerVersion, AppDir);
+
 update_source(AppDir, {git, _Url, {branch, Branch}}) ->
     ShOpts = [{cd, AppDir}],
     rebar_utils:sh("git fetch origin", ShOpts),

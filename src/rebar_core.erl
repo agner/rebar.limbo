@@ -48,12 +48,7 @@
 
 run(RawArgs) ->
     %% Pre-load the rebar app so that we get default configuration
-    case application:load(rebar) of
-        ok ->
-            ok;
-        {error, {already_loaded, _}} ->
-            ok
-    end,
+    ok = application:load(rebar),
     %% Parse out command line arguments -- what's left is a list of commands to
     %% run -- and start running commands
     run_aux(rebar:parse_args(RawArgs)).
@@ -67,12 +62,7 @@ run_aux(["version"]) ->
     ok;
 run_aux(Commands) ->
     %% Make sure crypto is running
-    case crypto:start() of
-        ok ->
-            ok;
-        {error, {already_started, _}} ->
-            ok
-    end,
+    ok = crypto:start(),
 
     %% Initialize logging system
     rebar_log:init(),

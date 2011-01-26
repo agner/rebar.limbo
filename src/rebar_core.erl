@@ -63,6 +63,14 @@ run_aux(["version"]) ->
 run_aux(Commands) ->
     %% Make sure crypto is running
     ok = crypto:start(),
+    %% Make sure inets is running
+    inets:start(),
+    %% Make sure ssl is running
+	ssl:start(),
+    %% Make sure agner httpc profile exists
+	{ok, _Pid} = inets:start(httpc,[{profile, agner}]),
+    %% Make sure agner is running
+    ok = application:start(agner),
 
     %% Initialize logging system
     rebar_log:init(),

@@ -297,7 +297,6 @@ use_source(Dep, Count) ->
 download_source(AppDir, {agner, AgnerName}) ->
     download_source(AppDir, {agner, AgnerName, {branch, "master"}});
 download_source(AppDir, {agner, AgnerName, AgnerVersion}) ->
-    agner:start(),
     agner:fetch(AgnerName, AgnerVersion, AppDir);
 download_source(AppDir, {hg, Url, Rev}) ->
     ok = filelib:ensure_dir(AppDir),

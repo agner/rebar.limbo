@@ -299,7 +299,7 @@ use_source(Dep, Count) ->
 download_source(AppDir, {agner, AgnerName}) ->
     download_source(AppDir, {agner, AgnerName, {branch, "master"}});
 download_source(AppDir, {agner, AgnerName, AgnerVersion}) ->
-    agner:fetch(AgnerName, AgnerVersion, AppDir);
+    agner_fetch(AgnerName, AgnerVersion, AppDir);
 download_source(AppDir, {hg, Url, Rev}) ->
     ok = filelib:ensure_dir(AppDir),
     rebar_utils:sh(?FMT("hg clone -U ~s ~s", [Url, filename:basename(AppDir)]),
@@ -348,8 +348,7 @@ update_source(Dep) ->
 update_source(AppDir, {agner, AgnerName}) ->
     update_source(AppDir, {agner, AgnerName, {branch, "master"}});
 update_source(AppDir, {agner, AgnerName, AgnerVersion}) ->
-    agner:fetch(AgnerName, AgnerVersion, AppDir);
-
+    agner_fetch(AgnerName, AgnerVersion, AppDir);
 update_source(AppDir, {git, _Url, {branch, Branch}}) ->
     ShOpts = [{cd, AppDir}],
     rebar_utils:sh("git fetch origin", ShOpts),
@@ -424,3 +423,15 @@ has_vcs_dir(svn, Dir) ->
         orelse filelib:is_dir(filename:join(Dir, "_svn"));
 has_vcs_dir(_, _) ->
     true.
+
+agner_fetch(AgnerName, AgnerVersion, AppDir) ->
+    case agner:fetch(AgnerName, AgnerVersion, AppDir) of
+        {error, not_found}=E ->
+            {ok, Indices} = application:get_env(agner,indices),
+            ?CONSOLE("Can't locate agner spec ~s (~p) in these indeces: ~p ~n",[AgnerName, AgnerVersion, 
+                                                                                Indices
+                                                                               ]),
+            E;
+        Other ->
+            Other
+    end.

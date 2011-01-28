@@ -48,7 +48,12 @@
 
 run(RawArgs) ->
     %% Pre-load the rebar app so that we get default configuration
-    ok = application:load(rebar),
+    case application:load(rebar) of
+        ok ->
+            ok;
+        {error, {already_loaded, rebar}} ->
+            ok
+    end,
     %% Parse out command line arguments -- what's left is a list of commands to
     %% run -- and start running commands
     run_aux(rebar:parse_args(RawArgs)).

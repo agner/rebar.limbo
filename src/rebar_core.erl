@@ -48,7 +48,12 @@
 
 run(RawArgs) ->
     %% Pre-load the rebar app so that we get default configuration
-    ok = application:load(rebar),
+    case application:load(rebar) of
+        ok ->
+            ok;
+        {error, {already_loaded, rebar}} ->
+            ok
+    end,
     %% Parse out command line arguments -- what's left is a list of commands to
     %% run -- and start running commands
     run_aux(rebar:parse_args(RawArgs)).
@@ -62,15 +67,31 @@ run_aux(["version"]) ->
     ok;
 run_aux(Commands) ->
     %% Make sure crypto is running
-    ok = crypto:start(),
+    case crypto:start() of
+        ok ->
+            ok;
+        {error, {already_started, crypto}} ->
+            ok
+    end,
     %% Make sure inets is running
     inets:start(),
     %% Make sure ssl is running
 	ssl:start(),
     %% Make sure agner httpc profile exists
-	{ok, _Pid} = inets:start(httpc,[{profile, agner}]),
+	case inets:start(httpc,[{profile, agner}]) of
+        {ok, Pid} when is_pid(Pid) ->
+            ok;
+        {error, {already_started, Pid}} when is_pid(Pid) ->
+            ok
+    end,
     %% Make sure agner is running
-    ok = application:start(agner),
+    case application:start(agner) of
+        ok ->
+            ok;
+        {error,{already_started, _}} ->
+            ok
+    end,
+
 
     %% Initialize logging system
     rebar_log:init(),

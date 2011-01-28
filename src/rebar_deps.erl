@@ -424,6 +424,10 @@ has_vcs_dir(svn, Dir) ->
 has_vcs_dir(_, _) ->
     true.
 
+agner_fetch(AgnerName, {branch, Branch}, AppDir) ->
+    agner_fetch(AgnerName, {flavour, Branch}, AppDir);
+agner_fetch(AgnerName, {tag, Tag}, AppDir) ->
+    agner_fetch(AgnerName, {relase, Tag}, AppDir);
 agner_fetch(AgnerName, AgnerVersion, AppDir) ->
     case agner:fetch(AgnerName, AgnerVersion, AppDir) of
         {error, not_found}=E ->

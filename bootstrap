@@ -49,6 +49,7 @@ main(Args) ->
     true = code:add_path("ebin"),
     true = code:add_path("deps/agner/ebin"),
     true = code:add_path("deps/agner/deps/getopt/ebin"),
+    true = code:add_path("deps/agner/deps/gproc/ebin"),
 
     %% Run rebar to do proper .app validation and such
     rebar:main(["compile"] ++ Args),
@@ -60,6 +61,7 @@ main(Args) ->
         load_files("*", "ebin") ++
         load_files("*", "deps/agner/ebin") ++
         load_files("*", "deps/agner/deps/getopt/ebin") ++
+        load_files("*", "deps/agner/deps/gproc/ebin") ++
         load_files("priv/templates/*", "."),
 
     case zip:create("mem", Files, [memory]) of

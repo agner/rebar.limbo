@@ -87,25 +87,8 @@ run_aux(Commands) ->
         {error, {already_started, crypto}} ->
             ok
     end,
-    %% Make sure inets is running
-    inets:start(),
-    %% Make sure ssl is running
-	ssl:start(),
-    %% Make sure agner httpc profile exists
-	case inets:start(httpc,[{profile, agner}]) of
-        {ok, Pid} when is_pid(Pid) ->
-            ok;
-        {error, {already_started, Pid}} when is_pid(Pid) ->
-            ok
-    end,
     %% Make sure agner is running
-    case application:start(agner) of
-        ok ->
-            ok;
-        {error,{already_started, _}} ->
-            ok
-    end,
-
+    agner:start(),
 
     %% Initialize logging system
     rebar_log:init(),

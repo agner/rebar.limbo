@@ -1,4 +1,4 @@
-%% -*- tab-width: 4;erlang-indent-level: 4;indent-tabs-mode: nil -*-
+%% -*- erlang-indent-level: 4;indent-tabs-mode: nil -*-
 %% ex: ts=4 sw=4 et
 %% -------------------------------------------------------------------
 %%
@@ -33,12 +33,20 @@
 
 -include("rebar.hrl").
 
+-ifndef(BUILD_TIME).
+-define(BUILD_TIME, "undefined").
+-endif.
+
+-ifndef(VCS_INFO).
+-define(VCS_INFO, "undefined").
+-endif.
+
 %% ====================================================================
 %% Public API
 %% ====================================================================
 
 main(Args) ->
-    case catch(rebar_core:run(Args)) of
+    case catch(run(Args)) of
         ok ->
             ok;
         {error, failed} ->
@@ -48,6 +56,76 @@ main(Args) ->
             io:format("Uncaught error in rebar_core: ~p\n", [Error]),
             halt(1)
     end.
+
+%% ====================================================================
+%% Internal functions
+%% ====================================================================
+run(RawArgs) ->
+    %% Pre-load the rebar app so that we get default configuration
+    case application:load(rebar) of
+        ok ->
+            ok;
+        {error, {already_loaded, rebar}} ->
+            ok
+    end,
+    %% Parse out command line arguments -- what's left is a list of commands to
+    %% run -- and start running commands
+    run_aux(parse_args(RawArgs)).
+
+run_aux(["help"]) ->
+    help(),
+    ok;
+run_aux(["version"]) ->
+    %% Display vsn and build time info
+    version(),
+    ok;
+run_aux(Commands) ->
+    %% Make sure crypto is running
+    case crypto:start() of
+        ok ->
+            ok;
+        {error, {already_started, crypto}} ->
+            ok
+    end,
+    %% Make sure inets is running
+    inets:start(),
+    %% Make sure ssl is running
+	ssl:start(),
+    %% Make sure agner httpc profile exists
+	case inets:start(httpc,[{profile, agner}]) of
+        {ok, Pid} when is_pid(Pid) ->
+            ok;
+        {error, {already_started, Pid}} when is_pid(Pid) ->
+            ok
+    end,
+    %% Make sure agner is running
+    case application:start(agner) of
+        ok ->
+            ok;
+        {error,{already_started, _}} ->
+            ok
+    end,
+
+
+    %% Initialize logging system
+    rebar_log:init(),
+
+    %% Convert command strings to atoms
+    CommandAtoms = [list_to_atom(C) || C <- Commands],
+
+    %% Determine the location of the rebar executable; important for pulling
+    %% resources out of the escript
+    rebar_config:set_global(escript, filename:absname(escript:script_name())),
+    ?DEBUG("Rebar location: ~p\n", [rebar_config:get_global(escript, undefined)]),
+
+    %% Note the top-level directory for reference
+    rebar_config:set_global(base_dir, filename:absname(rebar_utils:get_cwd())),
+
+    %% Keep track of how many operations we do, so we can detect bad commands
+    erlang:put(operations, 0),
+
+    %% Process each command, resetting any state between each one
+    rebar_core:process_commands(CommandAtoms).
 
 %%
 %% print help/usage string
@@ -94,7 +172,7 @@ parse_args(Args) ->
 
         {error, {Reason, Data}} ->
             ?ERROR("Error: ~s ~p~n~n", [Reason, Data]),
-            rebar:help(),
+            help(),
             halt(1)
     end.
 
@@ -105,10 +183,6 @@ version() ->
     {ok, Vsn} = application:get_key(rebar, vsn),
     ?CONSOLE("rebar version: ~s date: ~s vcs: ~s\n", [Vsn, ?BUILD_TIME, ?VCS_INFO]).
 
-
-%% ====================================================================
-%% Internal functions
-%% ====================================================================
 
 %%
 %% set global flag based on getopt option boolean value
@@ -173,6 +247,8 @@ delete-deps                          Delete fetched dependencies
 
 generate    [dump_spec=0/1]          Build release with reltool
 
+generate-upgrade  previous_release=path  Build an upgrade package
+
 eunit       [suite=foo]              Run eunit [test/foo_tests.erl] tests
 ct          [suite=] [case=]         Run common_test suites in ./test
 
@@ -226,8 +302,8 @@ filter_flags([Item | Rest], Commands) ->
 command_names() ->
     ["build-plt", "check-deps", "check-plt", "clean", "compile", "create",
      "create-app", "create-node", "ct", "delete-deps", "dialyze", "doc",
-     "eunit", "generate", "get-deps", "help", "list-templates", "update-deps",
-     "version", "xref"].
+     "eunit", "generate", "generate-upgrade", "get-deps", "help",
+     "list-templates", "update-deps", "version", "xref"].
 
 unabbreviate_command_names([]) ->
     [];
@@ -258,9 +334,9 @@ get_command_name_candidates(Command) ->
                                  is_command_name_candidate(Command, Candidate)],
     %% Is there a complete match?  If so return only that, return a
     %% list of candidates otherwise
-    case Candidates of
-        [Command] = Match -> Match;
-        _ -> Candidates
+    case lists:member(Command, Candidates) of
+        true  -> [Command];
+        false -> Candidates
     end.
 
 is_command_name_candidate(Command, Candidate) ->

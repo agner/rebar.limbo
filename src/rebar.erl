@@ -108,7 +108,17 @@ run_aux(Commands) ->
     erlang:put(operations, 0),
 
     %% Process each command, resetting any state between each one
-    rebar_core:process_commands(CommandAtoms).
+    Result = rebar_core:process_commands(CommandAtoms),
+    
+    case rebar_config:get_global(shutdown_agner, true) of
+        true ->
+            error_logger:delete_report_handler(error_logger_tty_h),
+            agner:stop();
+        _ ->
+            ignore
+    end,
+    
+    Result.
 
 %%
 %% print help/usage string
